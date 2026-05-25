@@ -4652,3 +4652,24 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_HoOh = {
     .images = sPicTable_HoOh,
     .affineAnims = gDummySpriteAffineAnimTable,
 };
+
+// Single follower entry. The .images field is swapped at runtime via
+// SetFollowerSpecies() to point to the correct species' pic table.
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Follower = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_FOLLOWER,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_FOLLOWER,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_FOLLOWER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .disableReflectionPaletteLoad = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Follower,
+    .images = sPicTable_FollowerBulbasaur,
+    .affineAnims = gDummySpriteAffineAnimTable,
+};

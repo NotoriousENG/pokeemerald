@@ -29,6 +29,7 @@
 #include "constants/moves.h"
 #include "constants/songs.h"
 #include "constants/trainer_types.h"
+#include "follower_pokemon.h"
 
 #define NUM_FORCED_MOVEMENTS 18
 #define NUM_ACRO_BIKE_COLLISIONS 5
@@ -974,12 +975,16 @@ void PlayerSetAnimId(u8 movementActionId, u8 copyableMovement)
 
 void PlayerWalkNormal(u8 direction)
 {
-    PlayerSetAnimId(GetWalkNormalMovementAction(direction), COPY_MOVE_WALK);
+    u8 action = GetWalkNormalMovementAction(direction);
+    PlayerSetAnimId(action, COPY_MOVE_WALK);
+    FollowerStep(action);
 }
 
 void PlayerWalkFast(u8 direction)
 {
-    PlayerSetAnimId(GetWalkFastMovementAction(direction), COPY_MOVE_WALK);
+    u8 action = GetWalkFastMovementAction(direction);
+    PlayerSetAnimId(action, COPY_MOVE_WALK);
+    FollowerStep(action);
 }
 
 void PlayerRideWaterCurrent(u8 direction)
@@ -989,12 +994,16 @@ void PlayerRideWaterCurrent(u8 direction)
 
 void PlayerWalkFaster(u8 direction)
 {
-    PlayerSetAnimId(GetWalkFasterMovementAction(direction), COPY_MOVE_WALK);
+    u8 action = GetWalkFasterMovementAction(direction);
+    PlayerSetAnimId(action, COPY_MOVE_WALK);
+    FollowerStep(action);
 }
 
 static void PlayerRun(u8 direction)
 {
-    PlayerSetAnimId(GetPlayerRunMovementAction(direction), COPY_MOVE_WALK);
+    u8 action = GetPlayerRunMovementAction(direction);
+    PlayerSetAnimId(action, COPY_MOVE_WALK);
+    FollowerStep(action);
 }
 
 void PlayerOnBikeCollide(u8 direction)
@@ -1033,6 +1042,7 @@ void PlayerJumpLedge(u8 direction)
 {
     PlaySE(SE_LEDGE);
     PlayerSetAnimId(GetJump2MovementAction(direction), COPY_MOVE_JUMP2);
+    FollowerJumpLedge(direction);
 }
 
 // Stop player on current facing direction once they're done moving and if they're not currently Acro Biking on bumpy slope
@@ -1082,6 +1092,7 @@ void PlayerLedgeHoppingWheelie(u8 direction)
 {
     PlaySE(SE_BIKE_HOP);
     PlayerSetAnimId(GetAcroWheelieJumpDirectionMovementAction(direction), COPY_MOVE_JUMP2);
+    FollowerJumpLedge(direction);
 }
 
 // acro turn jump

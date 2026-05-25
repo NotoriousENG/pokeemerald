@@ -22,6 +22,7 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "constants/weather.h"
+#include "follower_pokemon.h"
 
 #define GOING_DOWN gSpecialVar_0x8004
 
@@ -31,6 +32,7 @@ enum {
     TAG_CABLE_CAR = 1,
     TAG_DOOR,
     TAG_CABLE,
+    TAG_FOLLOWER_MON,
 };
 
 struct CableCar
@@ -222,6 +224,29 @@ static const struct SpriteTemplate sSpriteTemplate_Cable =
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
     .callback = SpriteCB_Cable,
+};
+
+static void SpriteCB_FollowerMon(struct Sprite *);
+
+static const struct OamData sOam_FollowerMon =
+{
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(32x32),
+    .size = SPRITE_SIZE(32x32),
+    .priority = 2,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_FollowerMon =
+{
+    .tileTag = TAG_FOLLOWER_MON,
+    .paletteTag = TAG_FOLLOWER_MON,
+    .oam = &sOam_FollowerMon,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_FollowerMon,
 };
 
 static void Task_LoadCableCar(u8 taskId)
@@ -640,6 +665,43 @@ static void SpriteCB_Player(struct Sprite *sprite)
     }
 }
 
+static void SpriteCB_FollowerMon(struct Sprite *sprite)
+{
+    if (sCableCar->state != STATE_END)
+    {
+        if (!GOING_DOWN)
+        {
+            sprite->x = sprite->sXPos - (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->y = sprite->sYPos - (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+        }
+        else
+        {
+            sprite->x = sprite->sXPos + (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->y = sprite->sYPos + (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+        }
+
+        switch (sprite->sState)
+        {
+        case 0:
+            sprite->y2 = 17;
+            if (sprite->sTimer++ > 9)
+            {
+                sprite->sTimer = 0;
+                sprite->sState++;
+            }
+            break;
+        default:
+            sprite->y2 = 16;
+            if (sprite->sTimer++ > 9)
+            {
+                sprite->sTimer = 0;
+                sprite->sState = 0;
+            }
+            break;
+        }
+    }
+}
+
 #undef sState
 #undef sTimer
 
@@ -789,6 +851,11 @@ static void CreateCableCarSprites(void)
 {
     u8 spriteId;
     u8 i;
+    u8 playerSpriteId;
+    u8 doorSpriteId;
+    const u16 *followerPal;
+    const struct SpriteFrameImage *followerPicTable;
+    u8 palSlot;
 
     u8 playerGraphicsIds[2] = {
         [MALE]   = OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL,
@@ -815,27 +882,56 @@ static void CreateCableCarSprites(void)
     {
         case FALSE:
         default:
-            // Create player sprite
-            spriteId = CreateObjectGraphicsSprite(playerGraphicsIds[gSaveBlock2Ptr->playerGender], SpriteCB_Player, 200, 73, 102);
-            if (spriteId != MAX_SPRITES)
+            // Create player sprite (left door, x2=0 = 8px left of center)
+            playerSpriteId = CreateObjectGraphicsSprite(playerGraphicsIds[gSaveBlock2Ptr->playerGender], SpriteCB_Player, 200, 73, 102);
+            if (playerSpriteId != MAX_SPRITES)
             {
-                gSprites[spriteId].oam.priority = 2;
-                gSprites[spriteId].x2 = 8;
-                gSprites[spriteId].y2 = 16;
-                gSprites[spriteId].sXPos = 200;
-                gSprites[spriteId].sYPos = 73;
+                gSprites[playerSpriteId].oam.priority = 2;
+                gSprites[playerSpriteId].x2 = 0;
+                gSprites[playerSpriteId].y2 = 16;
+                gSprites[playerSpriteId].sXPos = 200;
+                gSprites[playerSpriteId].sYPos = 73;
             }
             // Create car sprite
             spriteId = CreateSprite(&sSpriteTemplates_CableCar[0], 176, 43, 0x67);
             gSprites[spriteId].x2 = gSprites[spriteId].y2 = 32;
             gSprites[spriteId].sXPos = 176;
             gSprites[spriteId].sYPos = 43;
-            // Create door sprite
-            spriteId = CreateSprite(&sSpriteTemplates_CableCar[1], 200, 99, 0x65);
-            gSprites[spriteId].x2 = 8;
-            gSprites[spriteId].y2 = 4;
-            gSprites[spriteId].sXPos = 200;
-            gSprites[spriteId].sYPos = 99;
+            // Create door sprite aligned over player at left door
+            doorSpriteId = CreateSprite(&sSpriteTemplates_CableCar[1], 200, 99, 0x65);
+            gSprites[doorSpriteId].x2 = 0;
+            gSprites[doorSpriteId].y2 = 4;
+            gSprites[doorSpriteId].sXPos = 200;
+            gSprites[doorSpriteId].sYPos = 99;
+            // Follower: shift player left, place follower to the right
+            if (IsFollowerSpawned() && GetFollowerSpriteData(GetFollowerSpecies(), &followerPal, &followerPicTable))
+            {
+                struct SpriteSheet sheet = { followerPicTable[2].data, followerPicTable[2].size, TAG_FOLLOWER_MON };
+                LoadSpriteSheet(&sheet);
+                palSlot = AllocSpritePalette(TAG_FOLLOWER_MON);
+                LoadPalette(followerPal, OBJ_PLTT_ID(palSlot), PLTT_SIZE_4BPP);
+                spriteId = CreateSprite(&sSpriteTemplate_FollowerMon, 200, 73, 103);
+                if (spriteId != MAX_SPRITES)
+                {
+                    gSprites[spriteId].oam.priority = 2;
+                    gSprites[spriteId].x2 = 16;  // 8px right of center
+                    gSprites[spriteId].y2 = 16;
+                    gSprites[spriteId].sXPos = 200;
+                    gSprites[spriteId].sYPos = 73;
+                }
+                if (playerSpriteId != MAX_SPRITES)
+                    gSprites[playerSpriteId].x2 = 0;  // 8px left of center
+                // Realign door over player; add second door over follower
+                gSprites[doorSpriteId].x2 = 0;
+                spriteId = CreateSprite(&sSpriteTemplates_CableCar[1], 200, 99, 0x65);
+                if (spriteId != MAX_SPRITES)
+                {
+                    gSprites[spriteId].x2 = 16;
+                    gSprites[spriteId].y2 = 4;
+                    gSprites[spriteId].sXPos = 200;
+                    gSprites[spriteId].sYPos = 99;
+                }
+            }
             // Init weather
             sCableCar->weather = WEATHER_VOLCANIC_ASH;
             sCableCar->weatherDelay = 350;
@@ -843,27 +939,56 @@ static void CreateCableCarSprites(void)
             break;
         case TRUE:
             CopyToBgTilemapBufferRect_ChangePalette(0, sCableCar->groundTilemap + 0x24, 24, 26, 12, 3, 17);
-            // Create player sprite
-            spriteId = CreateObjectGraphicsSprite(playerGraphicsIds[gSaveBlock2Ptr->playerGender], SpriteCB_Player, 128, 39, 102);
-            if (spriteId != MAX_SPRITES)
+            // Create player sprite (right door, x2=16 = 8px right of center)
+            playerSpriteId = CreateObjectGraphicsSprite(playerGraphicsIds[gSaveBlock2Ptr->playerGender], SpriteCB_Player, 128, 39, 102);
+            if (playerSpriteId != MAX_SPRITES)
             {
-                gSprites[spriteId].oam.priority = 2;
-                gSprites[spriteId].x2 = 8;
-                gSprites[spriteId].y2 = 16;
-                gSprites[spriteId].sXPos = 128;
-                gSprites[spriteId].sYPos = 39;
+                gSprites[playerSpriteId].oam.priority = 2;
+                gSprites[playerSpriteId].x2 = 16;
+                gSprites[playerSpriteId].y2 = 16;
+                gSprites[playerSpriteId].sXPos = 128;
+                gSprites[playerSpriteId].sYPos = 39;
             }
             // Create car sprite
             spriteId = CreateSprite(&sSpriteTemplates_CableCar[0], 104, 9, 0x67);
             gSprites[spriteId].x2 = gSprites[spriteId].y2 = 32;
             gSprites[spriteId].sXPos = 104;
             gSprites[spriteId].sYPos = 9;
-            // Create door sprite
-            spriteId = CreateSprite(&sSpriteTemplates_CableCar[1], 128, 65, 0x65);
-            gSprites[spriteId].x2 = 8;
-            gSprites[spriteId].y2 = 4;
-            gSprites[spriteId].sXPos = 128;
-            gSprites[spriteId].sYPos = 65;
+            // Create door sprite aligned over player at right door
+            doorSpriteId = CreateSprite(&sSpriteTemplates_CableCar[1], 128, 65, 0x65);
+            gSprites[doorSpriteId].x2 = 16;
+            gSprites[doorSpriteId].y2 = 4;
+            gSprites[doorSpriteId].sXPos = 128;
+            gSprites[doorSpriteId].sYPos = 65;
+            // Follower: shift player right, place follower to the left
+            if (IsFollowerSpawned() && GetFollowerSpriteData(GetFollowerSpecies(), &followerPal, &followerPicTable))
+            {
+                struct SpriteSheet sheet = { followerPicTable[2].data, followerPicTable[2].size, TAG_FOLLOWER_MON };
+                LoadSpriteSheet(&sheet);
+                palSlot = AllocSpritePalette(TAG_FOLLOWER_MON);
+                LoadPalette(followerPal, OBJ_PLTT_ID(palSlot), PLTT_SIZE_4BPP);
+                spriteId = CreateSprite(&sSpriteTemplate_FollowerMon, 128, 39, 103);
+                if (spriteId != MAX_SPRITES)
+                {
+                    gSprites[spriteId].oam.priority = 2;
+                    gSprites[spriteId].x2 = 0;   // 8px left of center
+                    gSprites[spriteId].y2 = 16;
+                    gSprites[spriteId].sXPos = 128;
+                    gSprites[spriteId].sYPos = 39;
+                }
+                if (playerSpriteId != MAX_SPRITES)
+                    gSprites[playerSpriteId].x2 = 16;  // 8px right of center
+                // Realign door over player; add second door over follower
+                gSprites[doorSpriteId].x2 = 16;
+                spriteId = CreateSprite(&sSpriteTemplates_CableCar[1], 128, 65, 0x65);
+                if (spriteId != MAX_SPRITES)
+                {
+                    gSprites[spriteId].x2 = 0;
+                    gSprites[spriteId].y2 = 4;
+                    gSprites[spriteId].sXPos = 128;
+                    gSprites[spriteId].sYPos = 65;
+                }
+            }
             // Init weather
             sCableCar->weather = WEATHER_SUNNY;
             sCableCar->weatherDelay = 265;

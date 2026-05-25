@@ -1,4 +1,5 @@
 #include "global.h"
+#include "follower_pokemon.h"
 #include "cable_club.h"
 #include "event_data.h"
 #include "fieldmap.h"
@@ -343,10 +344,20 @@ static void Task_ExitDoor(u8 taskId)
         if (IsPlayerStandingStill())
         {
             u8 objEventId;
-            task->data[1] = FieldAnimateDoorClose(*x, *y);
             objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
             ObjectEventClearHeldMovementIfFinished(&gObjectEvents[objEventId]);
-            task->tState = 3;
+            if (IsFollowerSpawned())
+            {
+                // Leave the door open — the follower is still at the entrance.
+                // Task_FollowerUpdate will close it once the follower steps away.
+                UnfreezeObjectEvents();
+                task->tState = 4;
+            }
+            else
+            {
+                task->data[1] = FieldAnimateDoorClose(*x, *y);
+                task->tState = 3;
+            }
         }
         break;
     case 3:
@@ -683,7 +694,11 @@ static void Task_DoDoorWarp(u8 taskId)
     switch (task->tState)
     {
     case 0:
-        FreezeObjectEvents();
+        // Don't freeze yet when a normal follower is present — it needs to walk in
+        // behind the player.  Large followers don't enter doors; freeze immediately
+        // as if no follower.  Freeze for normal followers happens in state 5.
+        if (!IsFollowerSpawned() || IsLargeFollower())
+            FreezeObjectEvents();
         PlayerGetDestCoords(x, y);
         PlaySE(GetDoorSoundEffect(*x, *y - 1));
         task->data[1] = FieldAnimateDoorOpen(*x, *y - 1);
@@ -704,11 +719,22 @@ static void Task_DoDoorWarp(u8 taskId)
         if (IsPlayerStandingStill())
         {
             u8 objEventId;
-            task->data[1] = FieldAnimateDoorClose(*x, *y - 1);
             objEventId = GetObjectEventIdByLocalIdAndMap(LOCALID_PLAYER, 0, 0);
             ObjectEventClearHeldMovementIfFinished(&gObjectEvents[objEventId]);
             SetPlayerVisibility(FALSE);
-            task->tState = 3;
+            if (IsFollowerSpawned() && !IsLargeFollower())
+            {
+                // Each queue entry is one step. Push the pre-door tile first so the
+                // follower walks through (*x, *y) and then into the door (*x, *y - 1).
+                QueueFollowerTileEntry(*x, *y);
+                QueueFollowerTileEntry(*x, *y - 1);
+                task->tState = 5;
+            }
+            else
+            {
+                task->data[1] = FieldAnimateDoorClose(*x, *y - 1);
+                task->tState = 3;
+            }
         }
         break;
     case 3:
@@ -723,6 +749,22 @@ static void Task_DoDoorWarp(u8 taskId)
         PlayRainStoppingSoundEffect();
         task->tState = 0;
         task->func = Task_WarpAndLoadMap;
+        break;
+    case 5:
+        // Wait for the follower to reach the door tile (or time out after ~3 seconds).
+        {
+            s16 wx;
+            s16 wy;
+            wx = *x;
+            wy = *y - 1;
+            if (IsFollowerAtTile(wx, wy) || task->data[4]++ > 180)
+            {
+                HideFollower();
+                FreezeObjectEvents();
+                task->data[1] = FieldAnimateDoorClose(wx, wy);
+                task->tState = 3;
+            }
+        }
         break;
     }
 }

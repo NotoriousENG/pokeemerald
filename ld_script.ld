@@ -13,7 +13,7 @@ MEMORY
 /* Modify the following load addresses as needed to make more room. Alternately, delete both the
    declarations below and their references further down to get rid of the gaps.                  */
 
-__anim_mon_load_address = 0x8b00000;
+__anim_mon_load_address = 0x8b40000;
 __gfx_load_address = 0x8c00000;
 
 SECTIONS {

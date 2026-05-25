@@ -41,5 +41,6 @@ void UpdateBubblesFieldEffect(struct Sprite *sprite);
 void UpdateSparkleFieldEffect(struct Sprite *sprite);
 void SetSpriteInvisible(u8 spriteId);
 void ShowWarpArrowSprite(u8 spriteId, u8 direction, s16 x, s16 y);
+void RefreshFollowerReflectionPalette(void);
 
 #endif //GUARD_FIELD_EFFECT_HELPERS_H

@@ -2172,3 +2172,78 @@ static const struct SpriteFrameImage sPicTable_RubySapphireMay[] = {
     overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 7),
     overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 8),
 };
+
+// Follower pokemon pic tables — 6 frames per species (see convert_followsprites.py):
+//   0=northA  1=northB  2=southA  3=southB  4=westA  5=westB
+static const struct SpriteFrameImage sPicTable_FollowerBulbasaur[] = {
+    overworld_frame(gObjectEventPic_FollowerBulbasaur, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerBulbasaur, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerBulbasaur, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerBulbasaur, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerBulbasaur, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerBulbasaur, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerCharmander[] = {
+    overworld_frame(gObjectEventPic_FollowerCharmander, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerCharmander, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerCharmander, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerCharmander, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerCharmander, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerCharmander, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerSquirtle[] = {
+    overworld_frame(gObjectEventPic_FollowerSquirtle, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerSquirtle, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerSquirtle, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerSquirtle, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerSquirtle, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerSquirtle, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerChikorita[] = {
+    overworld_frame(gObjectEventPic_FollowerChikorita, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerChikorita, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerChikorita, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerChikorita, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerChikorita, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerChikorita, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerCyndaquil[] = {
+    overworld_frame(gObjectEventPic_FollowerCyndaquil, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerCyndaquil, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerCyndaquil, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerCyndaquil, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerCyndaquil, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerCyndaquil, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerTotodile[] = {
+    overworld_frame(gObjectEventPic_FollowerTotodile, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerTotodile, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerTotodile, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerTotodile, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerTotodile, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerTotodile, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerTreecko[] = {
+    overworld_frame(gObjectEventPic_FollowerTreecko, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerTreecko, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerTreecko, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerTreecko, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerTreecko, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerTreecko, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerTorchic[] = {
+    overworld_frame(gObjectEventPic_FollowerTorchic, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerTorchic, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerTorchic, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerTorchic, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerTorchic, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerTorchic, 4, 4, 5),
+};
+static const struct SpriteFrameImage sPicTable_FollowerMudkip[] = {
+    overworld_frame(gObjectEventPic_FollowerMudkip, 4, 4, 0),
+    overworld_frame(gObjectEventPic_FollowerMudkip, 4, 4, 1),
+    overworld_frame(gObjectEventPic_FollowerMudkip, 4, 4, 2),
+    overworld_frame(gObjectEventPic_FollowerMudkip, 4, 4, 3),
+    overworld_frame(gObjectEventPic_FollowerMudkip, 4, 4, 4),
+    overworld_frame(gObjectEventPic_FollowerMudkip, 4, 4, 5),
+};

@@ -28,6 +28,7 @@
 #include "trainer_see.h"
 #include "trainer_hill.h"
 #include "wild_encounter.h"
+#include "follower_pokemon.h"
 #include "constants/event_bg.h"
 #include "constants/event_objects.h"
 #include "constants/field_poison.h"
@@ -303,6 +304,9 @@ static const u8 *GetInteractedObjectEventScript(struct MapPosition *position, u8
     gSelectedObjectEvent = objectEventId;
     gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId;
     gSpecialVar_Facing = direction;
+
+    if (gObjectEvents[objectEventId].localId == LOCAL_ID_FOLLOWER)
+        return EventScript_TalkToFollower;
 
     if (InTrainerHill() == TRUE)
         script = GetTrainerHillTrainerScript();

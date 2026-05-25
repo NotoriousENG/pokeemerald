@@ -1,5 +1,6 @@
 #include "global.h"
 #include "event_object_movement.h"
+#include "palette.h"
 #include "field_camera.h"
 #include "field_effect.h"
 #include "field_effect_helpers.h"
@@ -13,7 +14,8 @@
 #include "constants/field_effects.h"
 #include "constants/songs.h"
 
-#define OBJ_EVENT_PAL_TAG_NONE 0x11FF // duplicate of define in event_object_movement.c
+#define OBJ_EVENT_PAL_TAG_NONE     0x11FF // duplicate of define in event_object_movement.c
+#define OBJ_EVENT_PAL_TAG_FOLLOWER 0x1124 // duplicate of define in event_object_movement.c
 
 static void UpdateObjectReflectionSprite(struct Sprite *);
 static void LoadObjectReflectionPalette(struct ObjectEvent *objectEvent, struct Sprite *sprite);
@@ -94,6 +96,39 @@ static void LoadObjectReflectionPalette(struct ObjectEvent *objectEvent, struct 
     }
 }
 
+// Copy the live follower palette into a reflection slot and blend it toward
+// water blue in gPlttBufferUnfaded. Does not call UpdateSpritePaletteWithWeather
+// — callers are responsible for that step.
+static void BlendFollowerIntoReflectionSlot(u8 paletteIndex)
+{
+    u16 waterColor = 0x7290; // RGB(16, 20, 28) — water blue
+    struct PlttData *water = (struct PlttData *)&waterColor;
+    u16 *reflPal;
+    u16 i;
+    s8 r, g, b;
+    struct PlttData *c;
+    CpuCopy16(gPlttBufferUnfaded + OBJ_PLTT_ID(PALSLOT_FOLLOWER),
+              gPlttBufferUnfaded + OBJ_PLTT_ID(paletteIndex),
+              PLTT_SIZE_4BPP);
+    reflPal = gPlttBufferUnfaded + OBJ_PLTT_ID(paletteIndex) + 1;
+    for (i = 0; i < 15; i++)
+    {
+        c = (struct PlttData *)&reflPal[i];
+        r = c->r; g = c->g; b = c->b;
+        reflPal[i] = (min(r + (((water->r - r) * 6) >> 4) + 4, 31)
+                     | (min(g + (((water->g - g) * 6) >> 4) + 4, 31) << 5)
+                     | (min(b + (((water->b - b) * 6) >> 4) + 4, 31) << 10));
+    }
+}
+
+// Public: re-apply the water-tinted follower palette to the reflection slot.
+// Call whenever the follower's species changes while a reflection is active.
+void RefreshFollowerReflectionPalette(void)
+{
+    BlendFollowerIntoReflectionSlot(PALSLOT_NPC_SPECIAL_REFLECTION);
+    UpdateSpritePaletteWithWeather(PALSLOT_NPC_SPECIAL_REFLECTION);
+}
+
 static void LoadObjectRegularReflectionPalette(struct ObjectEvent *objectEvent, u8 paletteIndex)
 {
     const struct ObjectEventGraphicsInfo *graphicsInfo = GetObjectEventGraphicsInfo(objectEvent->graphicsId);
@@ -101,6 +136,8 @@ static void LoadObjectRegularReflectionPalette(struct ObjectEvent *objectEvent, 
     {
         if (graphicsInfo->paletteSlot == PALSLOT_PLAYER)
             LoadPlayerObjectReflectionPalette(graphicsInfo->paletteTag, paletteIndex);
+        else if (graphicsInfo->reflectionPaletteTag == OBJ_EVENT_PAL_TAG_FOLLOWER)
+            BlendFollowerIntoReflectionSlot(paletteIndex);
         else if (graphicsInfo->paletteSlot == PALSLOT_NPC_SPECIAL)
             LoadSpecialObjectReflectionPalette(graphicsInfo->paletteTag, paletteIndex);
         else

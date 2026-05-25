@@ -33,6 +33,11 @@ EventScript_PkmnCenterNurse_IllTakeYourPkmn2::
 	return
 
 EventScript_PkmnCenterNurse_TakeAndHealPkmn::
+	specialvar VAR_RESULT, IsFollowerSpawned
+	goto_if_eq VAR_RESULT, FALSE, EventScript_PkmnCenterNurse_SkipFollowerRecall
+	special FollowerPkmnCenterRecall
+	waitstate
+EventScript_PkmnCenterNurse_SkipFollowerRecall::
 	applymovement VAR_0x800B, Common_Movement_WalkInPlaceFasterLeft
 	waitmovement 0
 	dofieldeffect FLDEFF_POKECENTER_HEAL
@@ -53,6 +58,7 @@ EventScript_PkmnCenterNurse_CheckTrainerHillAndUnionRoom::
 
 @ VAR_0x8004 is 1 when player has Gold Card
 EventScript_PkmnCenterNurse_ReturnPkmn::
+	special FollowerPkmnCenterRelease
 	goto_if_eq VAR_0x8004, 1, EventScript_PkmnCenterNurse_ReturnPkmn2
 	message gText_RestoredPkmnToFullHealth
 	waitmessage
@@ -71,6 +77,7 @@ EventScript_PkmnCenterNurse_ReturnPkmn2::
 
 EventScript_PkmnCenterNurse_PlayerWaitingInUnionRoom::
 	goto_if_set FLAG_NURSE_UNION_ROOM_REMINDER, EventScript_PkmnCenterNurse_ReturnPkmn
+	special FollowerPkmnCenterRelease
 	msgbox gText_RestoredPkmnToFullHealth, MSGBOX_DEFAULT
 	setflag FLAG_NURSE_UNION_ROOM_REMINDER
 	message CableClub_Text_PlayerIsWaiting

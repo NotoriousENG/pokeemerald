@@ -16,6 +16,7 @@
 #include "event_data.h"
 #include "evolution_scene.h"
 #include "field_control_avatar.h"
+#include "follower_pokemon.h"
 #include "field_effect.h"
 #include "field_player_avatar.h"
 #include "field_screen_effect.h"
@@ -3032,6 +3033,16 @@ static void SwitchPartyMon(void)
     SwitchMenuBoxSprites(&menuBoxes[0]->itemSpriteId, &menuBoxes[1]->itemSpriteId);
     SwitchMenuBoxSprites(&menuBoxes[0]->monSpriteId, &menuBoxes[1]->monSpriteId);
     SwitchMenuBoxSprites(&menuBoxes[0]->statusSpriteId, &menuBoxes[1]->statusSpriteId);
+
+    if ((gPartyMenu.slotId == 0 || gPartyMenu.slotId2 == 0) && IsFollowerSpawned())
+    {
+        u16 species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
+        if (species == SPECIES_NONE || GetMonData(&gPlayerParty[0], MON_DATA_SANITY_IS_EGG))
+            DespawnFollower();
+        // For valid species: SpawnFollowerFromLeadMon on field return re-spawns correctly.
+        // Calling SetFollowerSpecies here is unsafe — sprite data has been reset by the
+        // party menu and follower->spriteId would alias a party menu sprite, corrupting it.
+    }
 }
 
 // Finish switching mons or using Softboiled

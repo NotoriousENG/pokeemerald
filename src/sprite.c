@@ -630,6 +630,30 @@ void DestroySprite(struct Sprite *sprite)
     }
 }
 
+// Frees the tile range of a non-sheet sprite and allocates a new one of
+// newTileCount tiles.  Updates sprite->oam.tileNum on success.
+// Returns FALSE if VRAM is full (caller should handle gracefully).
+bool8 ReallocSpriteTilesIfNotSheet(struct Sprite *sprite, u16 newTileCount)
+{
+    u16 i;
+    u16 oldEnd;
+    s16 newTileNum;
+
+    if (sprite->usingSheet)
+        return TRUE;
+
+    oldEnd = sprite->oam.tileNum + sprite->images->size / TILE_SIZE_4BPP;
+    for (i = sprite->oam.tileNum; i < oldEnd; i++)
+        FREE_SPRITE_TILE(i);
+
+    newTileNum = AllocSpriteTiles(newTileCount);
+    if (newTileNum == -1)
+        return FALSE;
+
+    sprite->oam.tileNum = (u16)newTileNum;
+    return TRUE;
+}
+
 void ResetOamRange(u8 start, u8 end)
 {
     u8 i;

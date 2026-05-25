@@ -44,6 +44,14 @@ u8 MovementAction_Jump2Left_Step0(struct ObjectEvent *, struct Sprite *);
 u8 MovementAction_Jump2Left_Step1(struct ObjectEvent *, struct Sprite *);
 u8 MovementAction_Jump2Right_Step0(struct ObjectEvent *, struct Sprite *);
 u8 MovementAction_Jump2Right_Step1(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastDown_Step0(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastDown_Step1(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastUp_Step0(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastUp_Step1(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastLeft_Step0(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastLeft_Step1(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastRight_Step0(struct ObjectEvent *, struct Sprite *);
+u8 MovementAction_Jump2FastRight_Step1(struct ObjectEvent *, struct Sprite *);
 u8 MovementAction_Delay1_Step0(struct ObjectEvent *, struct Sprite *);
 u8 MovementAction_Delay_Step1(struct ObjectEvent *, struct Sprite *);
 u8 MovementAction_Finish(struct ObjectEvent *, struct Sprite *);
@@ -278,6 +286,10 @@ u8 (*const gMovementActionFuncs_Jump2Down[])(struct ObjectEvent *, struct Sprite
 u8 (*const gMovementActionFuncs_Jump2Up[])(struct ObjectEvent *, struct Sprite *);
 u8 (*const gMovementActionFuncs_Jump2Left[])(struct ObjectEvent *, struct Sprite *);
 u8 (*const gMovementActionFuncs_Jump2Right[])(struct ObjectEvent *, struct Sprite *);
+u8 (*const gMovementActionFuncs_Jump2FastDown[])(struct ObjectEvent *, struct Sprite *);
+u8 (*const gMovementActionFuncs_Jump2FastUp[])(struct ObjectEvent *, struct Sprite *);
+u8 (*const gMovementActionFuncs_Jump2FastLeft[])(struct ObjectEvent *, struct Sprite *);
+u8 (*const gMovementActionFuncs_Jump2FastRight[])(struct ObjectEvent *, struct Sprite *);
 u8 (*const gMovementActionFuncs_Delay1[])(struct ObjectEvent *, struct Sprite *);
 u8 (*const gMovementActionFuncs_Delay2[])(struct ObjectEvent *, struct Sprite *);
 u8 (*const gMovementActionFuncs_Delay4[])(struct ObjectEvent *, struct Sprite *);
@@ -438,6 +450,10 @@ u8 (*const *const gMovementActionFuncs[])(struct ObjectEvent *, struct Sprite *)
     [MOVEMENT_ACTION_JUMP_2_UP] = gMovementActionFuncs_Jump2Up,
     [MOVEMENT_ACTION_JUMP_2_LEFT] = gMovementActionFuncs_Jump2Left,
     [MOVEMENT_ACTION_JUMP_2_RIGHT] = gMovementActionFuncs_Jump2Right,
+    [MOVEMENT_ACTION_JUMP_2_FAST_DOWN] = gMovementActionFuncs_Jump2FastDown,
+    [MOVEMENT_ACTION_JUMP_2_FAST_UP] = gMovementActionFuncs_Jump2FastUp,
+    [MOVEMENT_ACTION_JUMP_2_FAST_LEFT] = gMovementActionFuncs_Jump2FastLeft,
+    [MOVEMENT_ACTION_JUMP_2_FAST_RIGHT] = gMovementActionFuncs_Jump2FastRight,
     [MOVEMENT_ACTION_DELAY_1] = gMovementActionFuncs_Delay1,
     [MOVEMENT_ACTION_DELAY_2] = gMovementActionFuncs_Delay2,
     [MOVEMENT_ACTION_DELAY_4] = gMovementActionFuncs_Delay4,
@@ -738,6 +754,30 @@ u8 (*const gMovementActionFuncs_Jump2Left[])(struct ObjectEvent *, struct Sprite
 u8 (*const gMovementActionFuncs_Jump2Right[])(struct ObjectEvent *, struct Sprite *) = {
     MovementAction_Jump2Right_Step0,
     MovementAction_Jump2Right_Step1,
+    MovementAction_PauseSpriteAnim,
+};
+
+u8 (*const gMovementActionFuncs_Jump2FastDown[])(struct ObjectEvent *, struct Sprite *) = {
+    MovementAction_Jump2FastDown_Step0,
+    MovementAction_Jump2FastDown_Step1,
+    MovementAction_PauseSpriteAnim,
+};
+
+u8 (*const gMovementActionFuncs_Jump2FastUp[])(struct ObjectEvent *, struct Sprite *) = {
+    MovementAction_Jump2FastUp_Step0,
+    MovementAction_Jump2FastUp_Step1,
+    MovementAction_PauseSpriteAnim,
+};
+
+u8 (*const gMovementActionFuncs_Jump2FastLeft[])(struct ObjectEvent *, struct Sprite *) = {
+    MovementAction_Jump2FastLeft_Step0,
+    MovementAction_Jump2FastLeft_Step1,
+    MovementAction_PauseSpriteAnim,
+};
+
+u8 (*const gMovementActionFuncs_Jump2FastRight[])(struct ObjectEvent *, struct Sprite *) = {
+    MovementAction_Jump2FastRight_Step0,
+    MovementAction_Jump2FastRight_Step1,
     MovementAction_PauseSpriteAnim,
 };
 

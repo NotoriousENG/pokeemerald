@@ -573,7 +573,7 @@ static const union AnimCmd *const sAnimTable_Splash[] =
 
 const struct SpriteTemplate gFieldEffectObjectTemplate_Splash = {
     .tileTag = TAG_NONE,
-    .paletteTag = FLDEFF_PAL_TAG_GENERAL_0,
+    .paletteTag = FLDEFF_PAL_TAG_GENERAL_1,
     .oam = &gObjectEventBaseOam_16x8,
     .anims = sAnimTable_Splash,
     .images = sPicTable_Splash,

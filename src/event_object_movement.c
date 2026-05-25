@@ -171,6 +171,7 @@ static void SetWalkSlowSpriteData(struct Sprite *, u8);
 static bool8 UpdateWalkSlowAnim(struct Sprite *);
 static u8 DoJumpSpriteMovement(struct Sprite *);
 static u8 DoJumpSpecialSpriteMovement(struct Sprite *);
+static u8 DoJump2FastSpriteMovement(struct Sprite *);
 static void CreateLevitateMovementTask(struct ObjectEvent *);
 static void DestroyLevitateMovementTask(u8);
 static bool8 NpcTakeStep(struct Sprite *);
@@ -191,7 +192,8 @@ const u8 gReflectionEffectPaletteMap[16] = {
         [PALSLOT_NPC_3_REFLECTION]       = PALSLOT_NPC_3_REFLECTION,
         [PALSLOT_NPC_4_REFLECTION]       = PALSLOT_NPC_4_REFLECTION,
         [PALSLOT_NPC_SPECIAL]            = PALSLOT_NPC_SPECIAL_REFLECTION,
-        [PALSLOT_NPC_SPECIAL_REFLECTION] = PALSLOT_NPC_SPECIAL_REFLECTION
+        [PALSLOT_NPC_SPECIAL_REFLECTION] = PALSLOT_NPC_SPECIAL_REFLECTION,
+        [PALSLOT_FOLLOWER]               = PALSLOT_NPC_SPECIAL_REFLECTION,
 };
 
 static const struct SpriteTemplate sCameraSpriteTemplate = {
@@ -468,6 +470,7 @@ const u8 gInitialMovementTypeFacingDirections[] = {
 #define OBJ_EVENT_PAL_TAG_LUGIA                   0x1121
 #define OBJ_EVENT_PAL_TAG_RS_BRENDAN              0x1122
 #define OBJ_EVENT_PAL_TAG_RS_MAY                  0x1123
+#define OBJ_EVENT_PAL_TAG_FOLLOWER                0x1124
 #define OBJ_EVENT_PAL_TAG_NONE                    0x11FF
 
 #include "data/object_events/object_event_graphics_info_pointers.h"
@@ -514,6 +517,7 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPal_Lugia,                 OBJ_EVENT_PAL_TAG_LUGIA},
     {gObjectEventPal_RubySapphireBrendan,   OBJ_EVENT_PAL_TAG_RS_BRENDAN},
     {gObjectEventPal_RubySapphireMay,       OBJ_EVENT_PAL_TAG_RS_MAY},
+    {gObjectEventPal_FollowerBulbasaur,     OBJ_EVENT_PAL_TAG_FOLLOWER},
 #ifdef BUGFIX
     {NULL,                                  OBJ_EVENT_PAL_TAG_NONE},
 #else
@@ -979,6 +983,13 @@ const u8 gJump2MovementActions[] = {
     MOVEMENT_ACTION_JUMP_2_LEFT,
     MOVEMENT_ACTION_JUMP_2_RIGHT,
 };
+const u8 gJump2FastMovementActions[] = {
+    MOVEMENT_ACTION_JUMP_2_FAST_DOWN,
+    MOVEMENT_ACTION_JUMP_2_FAST_DOWN,
+    MOVEMENT_ACTION_JUMP_2_FAST_UP,
+    MOVEMENT_ACTION_JUMP_2_FAST_LEFT,
+    MOVEMENT_ACTION_JUMP_2_FAST_RIGHT,
+};
 const u8 gJumpInPlaceMovementActions[] = {
     MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN,
     MOVEMENT_ACTION_JUMP_IN_PLACE_DOWN,
@@ -1393,6 +1404,22 @@ void RemoveObjectEventByLocalIdAndMap(u8 localId, u8 mapNum, u8 mapGroup)
     {
         FlagSet(GetObjectEventFlagIdByObjectEventId(objectEventId));
         RemoveObjectEvent(&gObjectEvents[objectEventId]);
+    }
+}
+
+// Scan by localId only — no mapNum/mapGroup check, no flag side-effect.
+// Used by the follower system to robustly remove stale object events after
+// soft-resets or when the stored map coords no longer match.
+void RemoveObjectEventByLocalId(u8 localId)
+{
+    u8 i;
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {
+        if (gObjectEvents[i].active && gObjectEvents[i].localId == localId)
+        {
+            RemoveObjectEvent(&gObjectEvents[i]);
+            return;
+        }
     }
 }
 
@@ -4729,7 +4756,7 @@ static bool8 DoesObjectCollideWithObjectAt(struct ObjectEvent *objectEvent, s16 
     for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
     {
         curObject = &gObjectEvents[i];
-        if (curObject->active && curObject != objectEvent)
+        if (curObject->active && curObject != objectEvent && curObject->localId != 0xFE)
         {
             if ((curObject->currentCoords.x == x && curObject->currentCoords.y == y) || (curObject->previousCoords.x == x && curObject->previousCoords.y == y))
             {
@@ -4963,6 +4990,7 @@ dirn_to_anim(GetWalkFasterMovementAction, gWalkFasterMovementActions);
 dirn_to_anim(GetSlideMovementAction, gSlideMovementActions);
 dirn_to_anim(GetPlayerRunMovementAction, gPlayerRunMovementActions);
 dirn_to_anim(GetJump2MovementAction, gJump2MovementActions);
+dirn_to_anim(GetJump2FastMovementAction, gJump2FastMovementActions);
 dirn_to_anim(GetJumpInPlaceMovementAction, gJumpInPlaceMovementActions);
 dirn_to_anim(GetJumpInPlaceTurnAroundMovementAction, gJumpInPlaceTurnAroundMovementActions);
 dirn_to_anim(GetJumpMovementAction, gJumpMovementActions);
@@ -5582,6 +5610,86 @@ bool8 MovementAction_Jump2Right_Step0(struct ObjectEvent *objectEvent, struct Sp
 bool8 MovementAction_Jump2Right_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
     if (DoJumpAnim(objectEvent, sprite))
+    {
+        objectEvent->hasShadow = FALSE;
+        sprite->sActionFuncId = 2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static u8 DoJump2FastAnimStep(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    return UpdateJumpAnim(objectEvent, sprite, DoJump2FastSpriteMovement);
+}
+
+static bool8 DoJump2FastAnim(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (DoJump2FastAnimStep(objectEvent, sprite) == JUMP_FINISHED)
+        return TRUE;
+    return FALSE;
+}
+
+bool8 MovementAction_Jump2FastDown_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    InitJumpRegular(objectEvent, sprite, DIR_SOUTH, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+    return MovementAction_Jump2FastDown_Step1(objectEvent, sprite);
+}
+
+bool8 MovementAction_Jump2FastDown_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (DoJump2FastAnim(objectEvent, sprite))
+    {
+        objectEvent->hasShadow = FALSE;
+        sprite->sActionFuncId = 2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+bool8 MovementAction_Jump2FastUp_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    InitJumpRegular(objectEvent, sprite, DIR_NORTH, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+    return MovementAction_Jump2FastUp_Step1(objectEvent, sprite);
+}
+
+bool8 MovementAction_Jump2FastUp_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (DoJump2FastAnim(objectEvent, sprite))
+    {
+        objectEvent->hasShadow = FALSE;
+        sprite->sActionFuncId = 2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+bool8 MovementAction_Jump2FastLeft_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    InitJumpRegular(objectEvent, sprite, DIR_WEST, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+    return MovementAction_Jump2FastLeft_Step1(objectEvent, sprite);
+}
+
+bool8 MovementAction_Jump2FastLeft_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (DoJump2FastAnim(objectEvent, sprite))
+    {
+        objectEvent->hasShadow = FALSE;
+        sprite->sActionFuncId = 2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+bool8 MovementAction_Jump2FastRight_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    InitJumpRegular(objectEvent, sprite, DIR_EAST, JUMP_DISTANCE_FAR, JUMP_TYPE_HIGH);
+    return MovementAction_Jump2FastRight_Step1(objectEvent, sprite);
+}
+
+bool8 MovementAction_Jump2FastRight_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (DoJump2FastAnim(objectEvent, sprite))
     {
         objectEvent->hasShadow = FALSE;
         sprite->sActionFuncId = 2;
@@ -7782,10 +7890,32 @@ void SetObjectSubpriorityByElevation(u8 elevation, struct Sprite *sprite, u8 sub
 
 static void ObjectEventUpdateSubpriority(struct ObjectEvent *objEvent, struct Sprite *sprite)
 {
+    // Follower (localId 0xFE) gets +1 extra so it sorts behind the player at equal Y.
+    u8 subpriority;
+
     if (objEvent->fixedPriority)
         return;
 
-    SetObjectSubpriorityByElevation(objEvent->previousElevation, sprite, 1);
+    subpriority = (objEvent->localId == 0xFE) ? 2 : 1;
+    SetObjectSubpriorityByElevation(objEvent->previousElevation, sprite, subpriority);
+
+    // Hot-springs special case: the player's water-mask sprite sits at
+    // player.subpriority - 1 (in front of the player).  When the follower is
+    // south of the player it has already been sorted in front by the y-based
+    // formula, but the extra +1 offset above can leave it just behind the mask.
+    // Force it clearly in front (player.sub - 2) whenever the player's hot-spring
+    // water effect is active and the follower is at or south of the player.
+    if (objEvent->localId == 0xFE)
+    {
+        struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
+        struct Sprite *playerSprite = &gSprites[gPlayerAvatar.spriteId];
+        // Use sprite screen y rather than tile coords for accurate mid-tile comparison.
+        if (player->inHotSprings
+            && (sprite->y - sprite->centerToCornerVecY) > (playerSprite->y - playerSprite->centerToCornerVecY))
+        {
+            sprite->subpriority = playerSprite->subpriority - 2;
+        }
+    }
 }
 
 static bool8 AreElevationsCompatible(u8 a, u8 b)
@@ -8486,6 +8616,26 @@ static u8 DoJumpSpriteMovement(struct Sprite *sprite)
         result = JUMP_HALFWAY;
 
     if (sprite->sTimer >= distanceToTime[sprite->sDistance])
+    {
+        sprite->y2 = 0;
+        result = JUMP_FINISHED;
+    }
+
+    return result;
+}
+
+static u8 DoJump2FastSpriteMovement(struct Sprite *sprite)
+{
+    u8 result = 0;
+
+    Step2(sprite, sprite->sDirection);
+    sprite->y2 = GetJumpY(sprite->sTimer, sprite->sJumpType);
+    sprite->sTimer++;
+
+    if (sprite->sTimer == 8)
+        result = JUMP_HALFWAY;
+
+    if (sprite->sTimer >= 16)
     {
         sprite->y2 = 0;
         result = JUMP_FINISHED;

@@ -1119,6 +1119,53 @@ static const union AnimCmd *const sAnimTable_CuttableTree[] = {
     [ANIM_REMOVE_OBSTACLE] = sAnim_TreeCut,
 };
 
+// Follower pokemon animation table — 6-frame strip layout:
+//   0=northA  1=northB  2=southA  3=southB  4=westA  5=westB
+// West frames are used for both west (direct) and east (hFlip) movement.
+static const union AnimCmd sAnim_FollowerFaceSouth[]    = { ANIMCMD_FRAME(2, 16),              ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerFaceNorth[]    = { ANIMCMD_FRAME(0, 16),              ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerFaceEast[]     = { ANIMCMD_FRAME(4, 16, .hFlip = TRUE), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerFaceWest[]     = { ANIMCMD_FRAME(4, 16),              ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoSouth[]      = { ANIMCMD_FRAME(2, 8), ANIMCMD_FRAME(3, 8), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoNorth[]      = { ANIMCMD_FRAME(0, 8), ANIMCMD_FRAME(1, 8), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoEast[]       = { ANIMCMD_FRAME(4, 8, .hFlip = TRUE), ANIMCMD_FRAME(5, 8, .hFlip = TRUE), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoWest[]       = { ANIMCMD_FRAME(4, 8), ANIMCMD_FRAME(5, 8), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastSouth[]  = { ANIMCMD_FRAME(2, 4), ANIMCMD_FRAME(3, 4), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastNorth[]  = { ANIMCMD_FRAME(0, 4), ANIMCMD_FRAME(1, 4), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastEast[]   = { ANIMCMD_FRAME(4, 4, .hFlip = TRUE), ANIMCMD_FRAME(5, 4, .hFlip = TRUE), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastWest[]   = { ANIMCMD_FRAME(4, 4), ANIMCMD_FRAME(5, 4), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFasterSouth[]= { ANIMCMD_FRAME(2, 2), ANIMCMD_FRAME(3, 2), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFasterNorth[]= { ANIMCMD_FRAME(0, 2), ANIMCMD_FRAME(1, 2), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFasterEast[] = { ANIMCMD_FRAME(4, 2, .hFlip = TRUE), ANIMCMD_FRAME(5, 2, .hFlip = TRUE), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFasterWest[] = { ANIMCMD_FRAME(4, 2), ANIMCMD_FRAME(5, 2), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastestSouth[]= { ANIMCMD_FRAME(2, 1), ANIMCMD_FRAME(3, 1), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastestNorth[]= { ANIMCMD_FRAME(0, 1), ANIMCMD_FRAME(1, 1), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastestEast[] = { ANIMCMD_FRAME(4, 1, .hFlip = TRUE), ANIMCMD_FRAME(5, 1, .hFlip = TRUE), ANIMCMD_JUMP(0), };
+static const union AnimCmd sAnim_FollowerGoFastestWest[] = { ANIMCMD_FRAME(4, 1), ANIMCMD_FRAME(5, 1), ANIMCMD_JUMP(0), };
+
+static const union AnimCmd *const sAnimTable_Follower[] = {
+    [ANIM_STD_FACE_SOUTH]      = sAnim_FollowerFaceSouth,
+    [ANIM_STD_FACE_NORTH]      = sAnim_FollowerFaceNorth,
+    [ANIM_STD_FACE_WEST]       = sAnim_FollowerFaceWest,
+    [ANIM_STD_FACE_EAST]       = sAnim_FollowerFaceEast,
+    [ANIM_STD_GO_SOUTH]        = sAnim_FollowerGoSouth,
+    [ANIM_STD_GO_NORTH]        = sAnim_FollowerGoNorth,
+    [ANIM_STD_GO_WEST]         = sAnim_FollowerGoWest,
+    [ANIM_STD_GO_EAST]         = sAnim_FollowerGoEast,
+    [ANIM_STD_GO_FAST_SOUTH]   = sAnim_FollowerGoFastSouth,
+    [ANIM_STD_GO_FAST_NORTH]   = sAnim_FollowerGoFastNorth,
+    [ANIM_STD_GO_FAST_WEST]    = sAnim_FollowerGoFastWest,
+    [ANIM_STD_GO_FAST_EAST]    = sAnim_FollowerGoFastEast,
+    [ANIM_STD_GO_FASTER_SOUTH] = sAnim_FollowerGoFasterSouth,
+    [ANIM_STD_GO_FASTER_NORTH] = sAnim_FollowerGoFasterNorth,
+    [ANIM_STD_GO_FASTER_WEST]  = sAnim_FollowerGoFasterWest,
+    [ANIM_STD_GO_FASTER_EAST]  = sAnim_FollowerGoFasterEast,
+    [ANIM_STD_GO_FASTEST_SOUTH]= sAnim_FollowerGoFastestSouth,
+    [ANIM_STD_GO_FASTEST_NORTH]= sAnim_FollowerGoFastestNorth,
+    [ANIM_STD_GO_FASTEST_WEST] = sAnim_FollowerGoFastestWest,
+    [ANIM_STD_GO_FASTEST_EAST] = sAnim_FollowerGoFastestEast,
+};
+
 static const union AnimCmd *const sAnimTable_Fishing[] = {
     [ANIM_TAKE_OUT_ROD_SOUTH] = sAnim_TakeOutRodSouth,
     [ANIM_TAKE_OUT_ROD_NORTH] = sAnim_TakeOutRodNorth,

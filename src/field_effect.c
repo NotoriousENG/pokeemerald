@@ -26,6 +26,7 @@
 #include "trainer_pokemon_sprites.h"
 #include "trig.h"
 #include "util.h"
+#include "follower_pokemon.h"
 #include "constants/field_effects.h"
 #include "constants/event_object_movement.h"
 #include "constants/metatile_behaviors.h"
@@ -618,6 +619,20 @@ static bool8 (*const sFallWarpFieldEffectFuncs[])(struct Task *) =
     FallWarpEffect_CameraShake,
     FallWarpEffect_End,
 };
+
+static void SyncFollowerEscalatorSprite(s16 x2, s16 y2)
+{
+    u8 followerSpriteId = GetFollowerSpriteId();
+    if (followerSpriteId < MAX_SPRITES)
+    {
+        struct Sprite *playerSprite = &gSprites[gPlayerAvatar.spriteId];
+        struct Sprite *followerSprite = &gSprites[followerSpriteId];
+        followerSprite->x2 = x2;
+        followerSprite->y2 = y2;
+        followerSprite->oam.priority      = playerSprite->oam.priority;
+        followerSprite->subspriteTableNum = playerSprite->subspriteTableNum;
+    }
+}
 
 static bool8 (*const sEscalatorWarpOutFieldEffectFuncs[])(struct Task *) =
 {
@@ -1647,6 +1662,7 @@ static void RideUpEscalatorOut(struct Task *task)
     sprite = &gSprites[gPlayerAvatar.spriteId];
     sprite->x2 = Cos(0x84, task->data[2]);
     sprite->y2 = Sin(0x94, task->data[2]);
+    SyncFollowerEscalatorSprite(sprite->x2, sprite->y2);
     task->data[3]++;
     if (task->data[3] & 1)
     {
@@ -1660,6 +1676,7 @@ static void RideDownEscalatorOut(struct Task *task)
     sprite = &gSprites[gPlayerAvatar.spriteId];
     sprite->x2 = Cos(0x7c, task->data[2]);
     sprite->y2 = Sin(0x76, task->data[2]);
+    SyncFollowerEscalatorSprite(sprite->x2, sprite->y2);
     task->data[3]++;
     if (task->data[3] & 1)
     {
@@ -1695,6 +1712,11 @@ static void FieldCallback_EscalatorWarpIn(void)
     LockPlayerFieldControls();
     CreateTask(Task_EscalatorWarpIn, 0);
     gFieldCallback = NULL;
+}
+
+bool8 IsEscalatorWarpIn(void)
+{
+    return gFieldCallback == FieldCallback_EscalatorWarpIn;
 }
 
 #define tState data[0]
@@ -1741,6 +1763,7 @@ static bool8 EscalatorWarpIn_Down_Init(struct Task *task)
     sprite = &gSprites[gPlayerAvatar.spriteId];
     sprite->x2 = Cos(0x84, task->data[1]);
     sprite->y2 = Sin(0x94, task->data[1]);
+    SyncFollowerEscalatorSprite(sprite->x2, sprite->y2);
     task->tState++;
     return FALSE;
 }
@@ -1751,6 +1774,7 @@ static bool8 EscalatorWarpIn_Down_Ride(struct Task *task)
     sprite = &gSprites[gPlayerAvatar.spriteId];
     sprite->x2 = Cos(0x84, task->data[1]);
     sprite->y2 = Sin(0x94, task->data[1]);
+    SyncFollowerEscalatorSprite(sprite->x2, sprite->y2);
     task->data[2]++;
     if (task->data[2] & 1)
     {
@@ -1771,6 +1795,7 @@ static bool8 EscalatorWarpIn_Up_Init(struct Task *task)
     sprite = &gSprites[gPlayerAvatar.spriteId];
     sprite->x2 = Cos(0x7c, task->data[1]);
     sprite->y2 = Sin(0x76, task->data[1]);
+    SyncFollowerEscalatorSprite(sprite->x2, sprite->y2);
     task->tState++;
     return FALSE;
 }
@@ -1781,6 +1806,7 @@ static bool8 EscalatorWarpIn_Up_Ride(struct Task *task)
     sprite = &gSprites[gPlayerAvatar.spriteId];
     sprite->x2 = Cos(0x7c, task->data[1]);
     sprite->y2 = Sin(0x76, task->data[1]);
+    SyncFollowerEscalatorSprite(sprite->x2, sprite->y2);
     task->data[2]++;
     if (task->data[2] & 1)
     {
