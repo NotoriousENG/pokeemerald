@@ -1069,6 +1069,10 @@ static bool8 Transition_StartIntro(struct Task *task)
 {
     SetWeatherScreenFadeOut();
     CpuCopy32(gPlttBufferFaded, gPlttBufferUnfaded, PLTT_SIZE);
+    // The follower palette is no longer valid during battle; zero both buffers so
+    // subsequent BlendPalettes(ALL) calls don't use stale follower data at slot 12.
+    CpuFill16(0, gPlttBufferUnfaded + OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
+    CpuFill16(0, gPlttBufferFaded + OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
     if (sTasks_Intro[task->tTransitionId] != NULL)
     {
         CreateTask(sTasks_Intro[task->tTransitionId], 4);
@@ -2304,6 +2308,11 @@ static bool8 Mugshot_Init(struct Task *task)
 
     InitTransitionData();
     ScanlineEffect_Clear();
+    // Clear stale sprite palette tags so dynamic OBJ slots (13-15) are free
+    // for trainer pic allocation. Weather/field effects may hold these slots;
+    // clearing tags does not clear buffer data, so sprites behind the banner remain correct.
+    FreeAllSpritePalettes();
+    gReservedSpritePaletteCount = OBJ_PALSLOT_COUNT;
     Mugshots_CreateTrainerPics(task);
 
     task->tSinIndex = 0;

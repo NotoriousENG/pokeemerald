@@ -2036,6 +2036,8 @@ void FreeAndReserveObjectSpritePalettes(void)
 {
     FreeAllSpritePalettes();
     gReservedSpritePaletteCount = OBJ_PALSLOT_COUNT;
+    CpuFill16(0, gPlttBufferUnfaded + OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
+    CpuFill16(0, gPlttBufferFaded + OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
 }
 
 static void LoadObjectEventPalette(u16 paletteTag)

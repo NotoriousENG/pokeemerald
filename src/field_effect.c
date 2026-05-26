@@ -903,6 +903,7 @@ bool8 FieldEffectActiveListContains(u8 id)
 u8 CreateTrainerSprite(u8 trainerSpriteID, s16 x, s16 y, u8 subpriority, u8 *buffer)
 {
     struct SpriteTemplate spriteTemplate;
+    u8 spriteId;
     LoadCompressedSpritePaletteOverrideBuffer(&gTrainerFrontPicPaletteTable[trainerSpriteID], buffer);
     LoadCompressedSpriteSheetOverrideBuffer(&gTrainerFrontPicTable[trainerSpriteID], buffer);
     spriteTemplate.tileTag = gTrainerFrontPicTable[trainerSpriteID].tag;
@@ -912,7 +913,18 @@ u8 CreateTrainerSprite(u8 trainerSpriteID, s16 x, s16 y, u8 subpriority, u8 *buf
     spriteTemplate.images = NULL;
     spriteTemplate.affineAnims = gDummySpriteAffineAnimTable;
     spriteTemplate.callback = SpriteCallbackDummy;
-    return CreateSprite(&spriteTemplate, x, y, subpriority);
+    spriteId = CreateSprite(&spriteTemplate, x, y, subpriority);
+    // Force-load palette from ROM to guarantee correct data in the assigned slot.
+    // Uses tag lookup (plain u16 array) rather than oam.paletteNum (packed bitfield)
+    // to avoid agbcc returning incorrect values for sub-word bitfield reads.
+    {
+        u8 paletteSlot = IndexOfSpritePaletteTag(spriteTemplate.paletteTag);
+        if (spriteId != MAX_SPRITES && paletteSlot != 0xFF)
+            LoadCompressedPalette(gTrainerFrontPicPaletteTable[trainerSpriteID].data,
+                                  OBJ_PLTT_ID(paletteSlot),
+                                  PLTT_SIZE_4BPP);
+    }
+    return spriteId;
 }
 
 static void UNUSED LoadTrainerGfx_TrainerCard(u8 gender, u16 palOffset, u8 *dest)

@@ -7932,7 +7932,8 @@ void SetFollowerSpecies(u16 species)
         if (gPlayerPartyCount > 0 && IsMonShiny(&gPlayerParty[0]) && GetFollowerShinyPal(species, &shinyPal))
             pal = shinyPal;
     }
-    LoadPalette(pal, OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
+    if (gReservedSpritePaletteCount > PALSLOT_FOLLOWER)
+        LoadPalette(pal, OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
 
     // Swap the sprite's image pointer in EWRAM so new tiles load on next frame.
     follower = GetFollowerObjEvent();
@@ -8000,7 +8001,8 @@ static void DoSpawnFollower(u16 species, s16 spawnX, s16 spawnY)
         if (gPlayerPartyCount > 0 && IsMonShiny(&gPlayerParty[0]) && GetFollowerShinyPal(species, &shinyPal))
             pal = shinyPal;
     }
-    LoadPalette(pal, OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
+    if (gReservedSpritePaletteCount > PALSLOT_FOLLOWER)
+        LoadPalette(pal, OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
 
     QueueClear();
     sLastPlayerX = player->currentCoords.x;
