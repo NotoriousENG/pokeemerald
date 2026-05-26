@@ -724,8 +724,9 @@ static void Task_DoDoorWarp(u8 taskId)
             SetPlayerVisibility(FALSE);
             if (IsFollowerSpawned() && !IsLargeFollower())
             {
-                // Each queue entry is one step. Push the pre-door tile first so the
-                // follower walks through (*x, *y) and then into the door (*x, *y - 1).
+                // Emerald door tiles are always one step north of the player's
+                // approach tile (player walks north into them), so *y - 1 is the
+                // door and *y is the pre-door step.
                 QueueFollowerTileEntry(*x, *y);
                 QueueFollowerTileEntry(*x, *y - 1);
                 task->tState = 5;

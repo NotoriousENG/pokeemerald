@@ -7292,6 +7292,7 @@ static bool8 GetFollowerShinyPal(u16 species, const u16 **palOut)
         return FALSE;
     }
 }
+
 bool8 GetFollowerSpriteData(u16 species,
                              const u16 **palOut,
                              const struct SpriteFrameImage **picOut)
@@ -7316,7 +7317,7 @@ static EWRAM_DATA bool8 sFollowerActive;
 static EWRAM_DATA u8    sFollowerObjectEventId;
 static EWRAM_DATA u16   sFollowerSpecies;
 static EWRAM_DATA u8    sFollowerTaskId;
-static EWRAM_DATA bool8 sFollowerNeedsReveal;
+static EWRAM_DATA u8    sFollowerNeedsReveal; // 0 = no reveal pending; 1 = reveal on next call; >1 = steps remaining
 static EWRAM_DATA u8    sFollowerRevealDelayTimer;
 static EWRAM_DATA bool8 sFollowerDoorNeedsClose;
 
@@ -7336,8 +7337,11 @@ static EWRAM_DATA s16   sFollowerJumpDestY;
 // The first player step after a simultaneous jump would otherwise drag the
 // follower onto the player's row/column, so that one coord-change is skipped.
 static EWRAM_DATA bool8 sFollowerJumpSimultaneous;
-// Set while Task_FollowerTeleport is active so Task_FollowerUpdate returns
-// early and DespawnFollower knows to clean up the ball sprite and task.
+// Set while Task_FollowerTeleport OR Task_FollowerSpawnBall is active.
+// Acts as a mutex: Task_FollowerUpdate yields while TRUE, and DespawnFollower
+// cancels whichever of the two tasks is running (checked via their individual
+// task ID + func fields).  Do not assume sFollowerTeleportTaskId is valid when
+// this flag is set — it may be TASK_NONE if the spawn-ball task holds the flag.
 static EWRAM_DATA bool8 sFollowerTeleporting;
 static EWRAM_DATA u8    sFollowerTeleportTaskId;
 // Set while Task_FollowerRecall is playing the recall-into-ball animation
@@ -7345,8 +7349,8 @@ static EWRAM_DATA u8    sFollowerTeleportTaskId;
 static EWRAM_DATA bool8 sFollowerRecalling;
 static EWRAM_DATA u8    sFollowerRecallTaskId;
 // Set while on bike/surf so that dismounting triggers the teleport-ball
-// respawn.  Kept separate from sFollowerNeedsReveal (which is the indoor
-// door-reveal countdown) so the two paths don't collide.
+// respawn.  Kept separate from sFollowerNeedsReveal (the indoor door-reveal
+// countdown u8) so the two paths don't collide.
 static EWRAM_DATA bool8 sFollowerNeedsRespawn;
 // Set by SpawnFollower so the first player step triggers a pokeball-open
 // animation at the follower's spawn tile instead of a silent pop-in.
@@ -7395,6 +7399,10 @@ static u8 sFollowerQueueSize;
 #define FOLLOWER_PKMNCENTER_ARC_HEIGHT      12
 // Frames to hold at the ball position before vanishing.
 #define FOLLOWER_PKMNCENTER_DELAY_FRAMES    20
+// Fallback y-delta used when the ball ObjEvent fails to spawn.
+// Approximates the counter height (~2 tiles) above a standard follower spawn
+// position so the arc still plays in a believable direction.
+#define FOLLOWER_PKMNCENTER_FALLBACK_Y_DELTA (-16)
 
 // Forward declarations for static functions used before their definitions.
 static void Task_FollowerUpdate(u8 taskId);
@@ -7534,7 +7542,7 @@ static void Task_FollowerUpdate(u8 taskId)
         sLastPlayerY              = player->currentCoords.y;
         // Signal the dismount path to spawn via ball animation rather than
         // direct reveal.  Use a dedicated flag to avoid colliding with the
-        // indoor door-reveal (sFollowerNeedsReveal) countdown.
+        // indoor door-reveal (sFollowerNeedsReveal u8 countdown).
         sFollowerNeedsRespawn    = TRUE;
         sFollowerNeedsReveal          = FALSE;
         sFollowerNeedsBallReveal      = FALSE;
@@ -7976,11 +7984,11 @@ static void DoSpawnFollower(u16 species, s16 spawnX, s16 spawnY)
             spr->oam.size = SPRITE_SIZE(64x64);
             CalcCenterToCornerVec(spr, spr->oam.shape, spr->oam.size, spr->oam.affineMode);
             SetSubspriteTables(spr, sOamTables_FollowerLarge);
-            spr->y2 = 1;
+            spr->y2 = 1; // align foot-to-shadow with player sprite
         }
         else
         {
-            spr->y2 = 1;
+            spr->y2 = 1; // align foot-to-shadow with player sprite
         }
         spr->images = picTable;
         spr->oam.paletteNum = PALSLOT_FOLLOWER;
@@ -8054,6 +8062,8 @@ static void Task_FollowerRecall(u8 taskId)
 //   [2] multi-use: left-step flag (state 1) | lerp step counter (state 2)
 //                | hold-timer (state 3)
 //   [3] x pixel delta: ball_eff_x − follower_eff_x at lerp start
+//   [4] y pixel delta: (ball_eff_y − follower_eff_y − 8) at lerp start
+//       (the −8 bias lifts the arc endpoint to the ball's visual centre)
 // State 0: spawn ball on counter; walk left if follower is directly behind
 //          the player (same x), otherwise just face up.
 // State 1: wait for walk/face-up; then freeze follower, fix OAM priority so
@@ -8163,8 +8173,10 @@ static void Task_FollowerPkmnCenterRecall(u8 taskId)
                 }
                 else
                 {
+                    // Ball spawn failed — use fallback deltas so the arc still
+                    // plays in a believable direction rather than snapping to 0,0.
                     gTasks[taskId].data[3] = 0;
-                    gTasks[taskId].data[4] = -16;
+                    gTasks[taskId].data[4] = FOLLOWER_PKMNCENTER_FALLBACK_Y_DELTA;
                 }
                 gTasks[taskId].data[2] = 0;
                 PlaySE(SE_BALL_OPEN);
@@ -8606,9 +8618,10 @@ void SpawnFollowerFromLeadMonOnLoad(void)
     player = &gObjectEvents[gPlayerAvatar.objectEventId];
     if (IsEscalatorWarpIn())
     {
-        // Spawn one tile west: the escalator animation slides in from the left
-        // (x2 starts at ~-16px), so this base offset makes the follower appear
-        // one step behind the player when it becomes visible.
+        // Escalator warp-in slides the player eastward (x2 starts at ~-16px and
+        // animates toward 0), so spawn the follower one tile west — behind the
+        // player in the direction they came from — so it appears alongside the
+        // player once the slide animation ends.
         DoSpawnFollower(species, player->currentCoords.x - 1, player->currentCoords.y);
         sFollowerRevealDelayTimer = 24;
         {

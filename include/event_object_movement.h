@@ -26,6 +26,11 @@ enum {
     // the remaining sprite palette slots (13-15) are used by field effects (weather uses 2).
 };
 
+// Palette tag for the follower object event.  Shared between event_object_movement.c
+// and field_effect_helpers.c (water-reflection blend), so defined here rather than
+// as a local #define in each translation unit.
+#define OBJ_EVENT_PAL_TAG_FOLLOWER 0x1124
+
 enum SpinnerRunnerFollowPatterns
 {
     RUNFOLLOW_ANY,

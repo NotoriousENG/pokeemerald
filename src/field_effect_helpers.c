@@ -15,7 +15,7 @@
 #include "constants/songs.h"
 
 #define OBJ_EVENT_PAL_TAG_NONE     0x11FF // duplicate of define in event_object_movement.c
-#define OBJ_EVENT_PAL_TAG_FOLLOWER 0x1124 // duplicate of define in event_object_movement.c
+// OBJ_EVENT_PAL_TAG_FOLLOWER is defined in include/event_object_movement.h (included above)
 
 static void UpdateObjectReflectionSprite(struct Sprite *);
 static void LoadObjectReflectionPalette(struct ObjectEvent *objectEvent, struct Sprite *sprite);

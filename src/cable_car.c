@@ -612,13 +612,13 @@ static void SpriteCB_CableCar(struct Sprite *sprite)
     {
         if (!GOING_DOWN)
         {
-            sprite->x = sprite->sXPos - (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
-            sprite->y = sprite->sYPos - (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->x = sprite->sXPos - (u8)(7 * sCableCar->timer / 50);
+            sprite->y = sprite->sYPos - (u8)(sCableCar->timer / 15);
         }
         else
         {
-            sprite->x = sprite->sXPos + (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
-            sprite->y = sprite->sYPos + (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->x = sprite->sXPos + (u8)(7 * sCableCar->timer / 50);
+            sprite->y = sprite->sYPos + (u8)(sCableCar->timer / 15);
         }
     }
 }
@@ -633,13 +633,13 @@ static void SpriteCB_Player(struct Sprite *sprite)
         // Move along with cable car
         if (!GOING_DOWN)
         {
-            sprite->x = sprite->sXPos - (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
-            sprite->y = sprite->sYPos - (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->x = sprite->sXPos - (u8)(7 * sCableCar->timer / 50);
+            sprite->y = sprite->sYPos - (u8)(sCableCar->timer / 15);
         }
         else
         {
-            sprite->x = sprite->sXPos + (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
-            sprite->y = sprite->sYPos + (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->x = sprite->sXPos + (u8)(7 * sCableCar->timer / 50);
+            sprite->y = sprite->sYPos + (u8)(sCableCar->timer / 15);
         }
 
         // Bounce up and down
@@ -671,13 +671,13 @@ static void SpriteCB_FollowerMon(struct Sprite *sprite)
     {
         if (!GOING_DOWN)
         {
-            sprite->x = sprite->sXPos - (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
-            sprite->y = sprite->sYPos - (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->x = sprite->sXPos - (u8)(7 * sCableCar->timer / 50);
+            sprite->y = sprite->sYPos - (u8)(sCableCar->timer / 15);
         }
         else
         {
-            sprite->x = sprite->sXPos + (u8)(0.14f * S16TOPOSFLOAT(sCableCar->timer));
-            sprite->y = sprite->sYPos + (u8)(0.067f * S16TOPOSFLOAT(sCableCar->timer));
+            sprite->x = sprite->sXPos + (u8)(7 * sCableCar->timer / 50);
+            sprite->y = sprite->sYPos + (u8)(sCableCar->timer / 15);
         }
 
         switch (sprite->sState)
