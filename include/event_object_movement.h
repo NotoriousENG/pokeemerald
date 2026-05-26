@@ -30,6 +30,7 @@ enum {
 // and field_effect_helpers.c (water-reflection blend), so defined here rather than
 // as a local #define in each translation unit.
 #define OBJ_EVENT_PAL_TAG_FOLLOWER 0x1124
+#define OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION 0x1102
 
 enum SpinnerRunnerFollowPatterns
 {

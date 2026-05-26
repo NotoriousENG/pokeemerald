@@ -151,11 +151,13 @@ static void LoadObjectRegularReflectionPalette(struct ObjectEvent *objectEvent, 
 static void LoadObjectHighBridgeReflectionPalette(struct ObjectEvent *objectEvent, u8 paletteNum)
 {
     const struct ObjectEventGraphicsInfo *graphicsInfo = GetObjectEventGraphicsInfo(objectEvent->graphicsId);
-    if (graphicsInfo->reflectionPaletteTag != OBJ_EVENT_PAL_TAG_NONE)
-    {
-        PatchObjectPalette(graphicsInfo->reflectionPaletteTag, paletteNum);
-        UpdateSpritePaletteWithWeather(paletteNum);
-    }
+    u16 tag = graphicsInfo->reflectionPaletteTag;
+    // Objects without an explicit reflection palette (TAG_NONE) or using the
+    // follower's dynamic palette still need the flat shadow on a high bridge.
+    if (tag == OBJ_EVENT_PAL_TAG_NONE || tag == OBJ_EVENT_PAL_TAG_FOLLOWER)
+        tag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION;
+    PatchObjectPalette(tag, paletteNum);
+    UpdateSpritePaletteWithWeather(paletteNum);
 }
 
 static void UpdateObjectReflectionSprite(struct Sprite *reflectionSprite)
