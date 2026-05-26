@@ -306,7 +306,7 @@ static const u8 *GetInteractedObjectEventScript(struct MapPosition *position, u8
     gSpecialVar_Facing = direction;
 
     if (gObjectEvents[objectEventId].localId == LOCAL_ID_FOLLOWER)
-        return EventScript_TalkToFollower;
+        return TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_ON_FOOT) ? EventScript_TalkToFollower : NULL;
 
     if (InTrainerHill() == TRUE)
         script = GetTrainerHillTrainerScript();
