@@ -7412,6 +7412,7 @@ static void Task_FollowerRecall(u8 taskId);
 static void Task_FollowerPkmnCenterRecall(u8 taskId);
 static void RevealFollower(void);
 static void DoSpawnFollower(u16 species, s16 spawnX, s16 spawnY);
+static s8 GetLeadFollowerPartyIndex(void);
 
 // Spawn offset: follower appears one tile behind the player's facing direction.
 // Index by DIR_* (1=south,2=north,3=west,4=east); index 0 unused.
@@ -7998,7 +7999,8 @@ static void DoSpawnFollower(u16 species, s16 spawnX, s16 spawnY)
     // Load after spawn so TrySetupObjectEventSprite can't overwrite with the static Bulbasaur entry.
     {
         const u16 *shinyPal;
-        if (gPlayerPartyCount > 0 && IsMonShiny(&gPlayerParty[0]) && GetFollowerShinyPal(species, &shinyPal))
+        s8 partyIdx = GetLeadFollowerPartyIndex();
+        if (partyIdx >= 0 && IsMonShiny(&gPlayerParty[partyIdx]) && GetFollowerShinyPal(species, &shinyPal))
             pal = shinyPal;
     }
     if (gReservedSpritePaletteCount > PALSLOT_FOLLOWER)
@@ -8520,17 +8522,85 @@ void FollowerJumpLedge(u8 direction)
     sFollowerJumpDestY = player->currentCoords.y + sJump2DeltaY[direction];
 }
 
+// Returns the party index of the first non-egg, non-fainted Pokémon, or -1.
+static s8 GetLeadFollowerPartyIndex(void)
+{
+    u8 i;
+    for (i = 0; i < gPlayerPartyCount; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SANITY_IS_EGG))
+            continue;
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            continue;
+        if (GetMonData(&gPlayerParty[i], MON_DATA_HP) == 0)
+            continue;
+        return (s8)i;
+    }
+    return -1;
+}
+
 void SpawnFollowerFromLeadMon(void)
 {
+    s8 idx = GetLeadFollowerPartyIndex();
     u16 species;
+    const u16 *pal;
+    const struct SpriteFrameImage *picTable;
+    const u16 *shinyPal;
 
-    if (gPlayerPartyCount == 0)
+    if (idx < 0)
+    {
+        DespawnFollower();
         return;
-    if (GetMonData(&gPlayerParty[0], MON_DATA_SANITY_IS_EGG))
+    }
+    species = GetMonData(&gPlayerParty[idx], MON_DATA_SPECIES);
+
+    // If the same species is already following, restore the sprite and palette
+    // without a full despawn/respawn (avoids the Pokéball animation).
+    // SpawnObjectEventsOnReturnToField re-creates the sprite and resets images
+    // to the static Bulbasaur placeholder, so we must re-apply the correct
+    // images, palette slot, and large-sprite setup here.
+    // ResumeMap also calls ResetTasks, destroying Task_FollowerUpdate; recreate
+    // it when needed so movement and animation resume.
+    if (sFollowerActive && sFollowerSpecies == species && IsFollowerSpawned())
+    {
+        struct ObjectEvent *follower = GetFollowerObjEvent();
+        if (GetFollowerSpriteInfo(species, &pal, &picTable))
+        {
+            if (follower != NULL)
+            {
+                struct Sprite *spr = &gSprites[follower->spriteId];
+                spr->images = picTable;
+                spr->oam.paletteNum = PALSLOT_FOLLOWER;
+                spr->y2 = 1;
+                if (IsLargeFollowerSpecies(species))
+                {
+                    ReallocSpriteTilesIfNotSheet(spr, 64);
+                    spr->oam.size = SPRITE_SIZE(64x64);
+                    CalcCenterToCornerVec(spr, spr->oam.shape, spr->oam.size, spr->oam.affineMode);
+                    SetSubspriteTables(spr, sOamTables_FollowerLarge);
+                }
+            }
+            if (IsMonShiny(&gPlayerParty[idx]) && GetFollowerShinyPal(species, &shinyPal))
+                pal = shinyPal;
+            LoadPalette(pal, OBJ_PLTT_ID(PALSLOT_FOLLOWER), PLTT_SIZE_4BPP);
+        }
+        if (sFollowerTaskId == TASK_NONE
+         || !gTasks[sFollowerTaskId].isActive
+         || gTasks[sFollowerTaskId].func != Task_FollowerUpdate)
+        {
+            struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
+            QueueClear();
+            sFollowerJumpPending          = FALSE;
+            sFollowerJumpSimultaneous     = FALSE;
+            sFollowerNeedsReveal          = FALSE;
+            sFollowerNeedsBallReveal      = FALSE;
+            sFollowerNeedsInputBallReveal = FALSE;
+            sLastPlayerX = player->currentCoords.x;
+            sLastPlayerY = player->currentCoords.y;
+            sFollowerTaskId = CreateTask(Task_FollowerUpdate, 10);
+        }
         return;
-    species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
-    if (species == SPECIES_NONE)
-        return;
+    }
     SpawnFollower(species);
 }
 
@@ -8602,14 +8672,11 @@ void SpawnFollowerFromLeadMonOnLoad(void)
     u16 species;
     bool8 isLarge;
     struct ObjectEvent *player;
+    s8 idx = GetLeadFollowerPartyIndex();
 
-    if (gPlayerPartyCount == 0)
+    if (idx < 0)
         return;
-    if (GetMonData(&gPlayerParty[0], MON_DATA_SANITY_IS_EGG))
-        return;
-    species = GetMonData(&gPlayerParty[0], MON_DATA_SPECIES);
-    if (species == SPECIES_NONE)
-        return;
+    species = GetMonData(&gPlayerParty[idx], MON_DATA_SPECIES);
 
     DespawnFollower();
     isLarge = IsLargeFollowerSpecies(species);
